@@ -10,7 +10,7 @@ await mkdir('test-results',{recursive:true});
 const browser=await chromium.launch({headless:true,executablePath:arg('chromium') || process.env.ODYSSEY_CHROMIUM || undefined});
 const context=await browser.newContext({viewport:{width:1440,height:1050},reducedMotion:'reduce'});
 const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(String(e)));
-const base='http://localhost:8140';
+const base=arg('url') || 'http://localhost:8140';
 try{
   await page.goto(base);await page.getByRole('heading',{name:'Every number has a story.'}).waitFor();
   await page.screenshot({path:'test-results/journey-desktop.png',fullPage:true});
@@ -18,7 +18,19 @@ try{
   assert.equal(await page.locator('.world-card:disabled').count(),7);
   await page.getByRole('button',{name:'Start adventure',exact:true}).click();await page.getByRole('button',{name:'Let’s explore',exact:true}).click();
   await page.screenshot({path:'test-results/pebble-mobile.png',fullPage:true});
-  if(process.argv.includes('--edge')){
+  if(process.argv.includes('--deployed')){
+    for(let i=1;i<=7;i++)await page.getByRole('button',{name:`Count animal ${i}`,exact:true}).click();
+    await page.getByRole('button',{name:'Check answer',exact:true}).click();await page.locator('.feedback.success').waitFor();
+    await page.getByRole('button',{name:'Number lab',exact:true}).click();
+    await page.getByLabel('Grouping size').selectOption('2');assert.equal(await page.locator('.lab-numeral').innerText(),'11001');
+    const scope=await page.evaluate(async()=>(await navigator.serviceWorker.ready).scope);
+    assert.equal(scope,new URL('./',base).href);
+    await context.setOffline(true);await page.reload();await page.getByRole('heading',{name:'The number lab.',exact:true}).waitFor();
+    await page.getByRole('button',{name:'Journey',exact:true}).click();await page.getByRole('button',{name:'Continue adventure',exact:true}).click();
+    await page.getByRole('button',{name:'Resume this world',exact:true}).click();await page.getByRole('heading',{name:'The missing travellers',exact:true}).waitFor();
+    console.log(`✓ Published app, gameplay, base conversion, service-worker scope, offline reload and saved progress: ${base}`);
+  }
+  else if(process.argv.includes('--edge')){
     await page.goto(base);await page.reload();await page.keyboard.press('Tab');
     assert.equal(await page.locator('.skip-link:focus').count(),1);
     await page.keyboard.press('Enter');assert.equal(await page.locator('#main:focus').count(),1);

@@ -118,3 +118,9 @@ node scripts/browser-qa.mjs --full
 ```
 
 If using an existing runtime, pass `--playwright=/absolute/path/to/playwright/index.mjs` and `--chromium=/absolute/path/to/browser`. Keep the local server running during the check.
+
+To check the published app, including offline loading under its GitHub Pages path:
+
+```sh
+node scripts/browser-qa.mjs --deployed --url=https://manojraga.github.io/number-odyssey/
+```
